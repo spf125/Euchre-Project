@@ -15,4 +15,9 @@ urlpatterns = [
     path('get-remaining-cards/', views.get_remaining_cards, name='get_remaining_cards'),
     path('play-next-trick/', views.play_next_trick, name='play_next_trick'),
     path('determine-trump/', views.determine_bot_trump_decision, name='determine_trump'),
+    path('init-trick/', views.init_trick, name='init_trick'),
+    path('play-player-card/', views.play_player_card, name='play_player_card'),
+    path('play-bot-card/', views.play_bot_card, name='play_bot_card'),
+    path('resolve-trick/', views.resolve_trick, name='resolve_trick'),
+    path('finalize-round/', views.finalize_round, name='finalize_round'),
 ]
