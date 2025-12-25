@@ -12,8 +12,8 @@ const tooltips = {
 
     "dealer": `
         <strong>How is the Dealer Chosen?</strong><br><br>
-        - At the start of the game, all players draw one card.<br>
-        - The player who draws the <strong>highest card</strong> becomes the first dealer.<br><br>
+        - At the start of the game, cards are dealt until a player is dealt a black jack.<br>
+        - The player who draws the first <strong>black jack</strong> becomes the first dealer.<br><br>
         <strong>After the first round:</strong><br>
         - The role of dealer rotates to the left after each round.<br><br>
         <strong>Visual Tip:</strong> Look for the <img src="/static/images/dealer-icon.png" alt="Dealer Icon" style="width: 16px; vertical-align: middle;"> icon and player highlighted in red to find the current dealer.

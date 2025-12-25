@@ -76,6 +76,25 @@ $(document).ready(function () {
         }
     }
 
+    function effectiveSuit(card, trumpSuit) {
+        // card: "J of hearts", etc.
+        const [rank, suit] = (card || "").split(" of ");
+        if (!rank || !suit) return suit;
+        // Right bower: J of trump
+        if (rank === "J" && suit === trumpSuit) return trumpSuit;
+        // Left bower: J of same color suit
+        const suitPairs = { hearts: "diamonds", diamonds: "hearts", clubs: "spades", spades: "clubs" };
+        const leftOf = suitPairs[trumpSuit];
+        if (rank === "J" && suit === leftOf) return trumpSuit;
+        return suit;
+    }
+    
+    function clearPlayerCardHighlight() {
+        $("#human-card img.playing-card")
+            .css({ opacity: 1.0, cursor: "default", filter: "" })
+            .off("click");
+    }
+
     function showTrumpSelection(dealer) {
         console.log("🃏 Showing Trump Selection Dialog...");
     
@@ -233,7 +252,7 @@ $(document).ready(function () {
                     kitty[0].card = response.discarded_card;
                 }
                 updateKittyDisplay();
-                
+
                 // Sync dealer hand in UI for both human and bot
                 if (response.dealer_updated_hand && Array.isArray(response.dealer_updated_hand)) {
                     const dealerName = response.dealer.trim();
@@ -592,7 +611,6 @@ $(document).ready(function () {
     function initializeDealerModal(response) {
         dealer = response.dealer;
         $("#modal-dealer .modal-content").html(`
-            <p><strong>Highest Card:</strong> ${response.highest_card}</p>
             <p><strong>Dealer:</strong> ${response.dealer}</p>
         `);
         $("#modal-dealer").fadeIn();
@@ -831,21 +849,18 @@ $(document).ready(function () {
         const TRICK_PAUSE_DELAY = 900;    // pause after 4 cards before next trick
         const ROUND_PAUSE_DELAY = 1200;   // pause before showing round results
 
+        let turnIndex = trickContext.players.indexOf(roundState.currentLeader);
+        
         function enablePlayerTurn() {
-            $("#player-hand img.playing-card, #human-card img.playing-card")
-                .css("cursor", "pointer")
-                .off("click")
-                .on("click", function () {
-                    const selectedCard = $(this).data("card");
-                    console.log(`Player selected card: ${selectedCard}`);
-                    playPlayerCard(selectedCard);
-                });
+            console.log("✅ Enabling player turn. Players:", trickContext.players, "Leader:", roundState.currentLeader);
+            // Use validation-aware highlighting
+            enablePlayerTurnWithValidation(trickContext, currentSuit || null);
+            const $imgs = $("#human-card img.playing-card");
+            console.log("Player cards found:", $imgs.length);
         }
 
         function disablePlayerTurn() {
-            $("#player-hand img.playing-card, #human-card img.playing-card")
-                .css("cursor", "default")
-                .off("click");
+            clearPlayerCardHighlight();
         }
 
         function playPlayerCard(card) {
@@ -905,8 +920,6 @@ $(document).ready(function () {
             }, BOT_PLAY_DELAY);
         }
 
-        let turnIndex =  trickContext.players.indexOf(roundState.currentLeader);
-
         function nextTurn() {
             turnIndex++;
             if (turnIndex >= trickContext.players.length) {
@@ -960,11 +973,53 @@ $(document).ready(function () {
             }
 
             const currentPlayer = trickContext.players[turnIndex];
+            console.log("➡️ Current turn:", currentPlayer);
             if (currentPlayer === "Player") {
                 enablePlayerTurn();
             } else {
                 playBotTurn(currentPlayer);
             }
+        }
+
+        // Enable human turn with valid card highlighting
+        function enablePlayerTurnWithValidation(trickContext, trumpSuit) {
+            const $cards = $("#human-card img.playing-card");
+        
+            // Determine lead suit if any cards already played
+            let leadSuit = null;
+            if (trickContext.cards.length > 0) {
+                leadSuit = effectiveSuit(trickContext.cards[0].card, trumpSuit);
+            }
+        
+            // Collect player's current hand strings from DOM (data-card holds the real string)
+            const playerCards = $cards.map((_, el) => $(el).data("card")).get();
+        
+            // If no lead suit, all cards are valid
+            let validCards = playerCards.slice();
+        
+            if (leadSuit) {
+                // Check if player can follow suit
+                const canFollow = playerCards.some(c => effectiveSuit(c, trumpSuit) === leadSuit);
+                validCards = canFollow
+                    ? playerCards.filter(c => effectiveSuit(c, trumpSuit) === leadSuit)
+                    : playerCards.slice();
+            }
+        
+            // Visual state: gray out invalid ones
+            $cards.each(function () {
+                const c = $(this).data("card");
+                const isValid = validCards.includes(c);
+                if (isValid) {
+                    $(this).css({ opacity: 1.0, cursor: "pointer", filter: "" });
+                    $(this).off("click").on("click", function () {
+                        const selectedCard = $(this).data("card");
+                        playPlayerCard(selectedCard); // existing function
+                    });
+                } else {
+                    $(this).css({ opacity: 0.35, cursor: "not-allowed", filter: "grayscale(100%)" });
+                    $(this).off("click"); // no click for invalid cards
+                }
+            });
         }
 
         turnIndex--;

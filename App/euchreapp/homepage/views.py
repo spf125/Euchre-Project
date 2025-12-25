@@ -84,39 +84,34 @@ def start_new_game(request):
             players = Player.objects.all()
             if len(deck) < len(players):
                 return JsonResponse({"error": "Not enough cards to determine dealer."}, status=400)
+            
+            def is_black_jack(card):
+                return card.rank == "J" and card.suit in ("clubs", "spades")
+            
+            dealer = None
+            dealt_log = {}
 
-            dealt_cards = {player: deck.pop() for player in players}
-
-            if not dealt_cards:
-                return JsonResponse({"error": "No cards were dealt. Check deck integrity."}, status=500)
-            try:
-                highest_card = max(dealt_cards.values(), key=lambda card: ["9", "10", "J", "Q", "K", "A"].index(card.rank))
-            except ValueError:
-                return JsonResponse({"error": "Invalid card data while selecting highest card."}, status=500)
-
-            dealer = next(player for player, card in dealt_cards.items() if card == highest_card)
+            deck_index = 0
+            while dealer is None:
+                for p in players:
+                    card = deck[deck_index]
+                    deck_index += 1
+                    dealt_log[p] = card
+                    if is_black_jack(card):
+                        dealer = p
+                        break
 
             game.dealer = dealer
             game.save()
 
             # Step 5: Return cards to deck & shuffle
-            deck.extend(dealt_cards.values())
-            shuffle(deck)
+            Card.objects.all().update(is_trump=False)
 
-            # Step 6: Deal hands
-            hands = {player: [deck.pop() for _ in range(5)] for player in players}
-
-            # Step 7: Prepare remaining cards for trump selection
-            remaining_cards = deck[:4] if len(deck) >= 4 else []
-
-            # Step 8: Send response
             return JsonResponse({
-                "hands": {player.name: [f"{card.rank} of {card.suit}" for card in hand] for player, hand in hands.items()},
-                "dealt_cards": {player.name: f"{card.rank} of {card.suit}" for player, card in dealt_cards.items()},
+                "dealt_cards": {p.name: f"{c.rank} of {c.suit}" for p, c in dealt_log.items()},
                 "dealer": dealer.name,
-                "highest_card": f"{highest_card.rank} of {highest_card.suit}",
-                "remaining_cards": [f"{card.rank} of {card.suit}" for card in remaining_cards],
-                "player_order": [player.name for player in players],
+                "highest_card": f"J of {'spades' if dealt_log[dealer].suit == 'spades' else 'clubs'}",
+                "player_order": [p.name for p in players],
                 "new_game_id": game.id
             })
 
