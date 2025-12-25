@@ -5,6 +5,59 @@ $(document).ready(function () {
     let trumpSelected = false;
     let gameResponse = null;
     let kitty = [] // Store the global response object here
+    let adminMode = false;
+
+    $('.ui.toggle.checkbox').checkbox();
+
+    $('#admin-mode-toggle').on('change', function () {
+        adminMode = this.checked === true;
+        rerenderHandsForAdminMode();
+    });
+
+    // If the input is initially checked, set adminMode accordingly
+    adminMode = $('#admin-mode-toggle').is(':checked');
+
+    function rerenderHandsForAdminMode() {
+        // Re-render any existing hand images in all four positions
+        Object.keys(positions).forEach(name => {
+            const $imgs = $(positions[name]).find('img.playing-card'); // FIX: define $imgs
+            $imgs.each(function () {
+                const card = $(this).data('card');
+                const imgSrc = (adminMode || name === "Player") ? getCardImage(card) : getCardImage("Hidden");
+                $(this).attr('src', imgSrc);
+            });
+        });
+
+        // Re-render table slots (played cards on the table remain face-up for clarity)
+        Object.values(tableSlots).forEach(selector => {
+            $(selector).find('img.played-card').each(function () {
+                const card = $(this).data('card');
+                $(this).attr('src', getCardImage(card));
+            });
+        });
+    }
+
+    function displayDealtCards(response) {
+        // Remember this response so toggle can re-render
+        gameResponse = response;
+        for (let player in response.hands) {
+            const cardContainer = $(positions[player]);
+            cardContainer.empty();
+            response.hands[player].forEach((card) => {
+                const imgSrc = (adminMode || player === "Player") ? getCardImage(card) : getCardImage("Hidden");
+                cardContainer.append(`<img src="${imgSrc}" class="playing-card" data-card="${card}" data-player="${player}">`);
+            });
+        }
+    }
+
+    function updatePlayerHand(player, cards) {
+        const cardContainer = $(positions["Player"]);
+        cardContainer.empty();
+        cards.forEach(card => {
+            const imgSrc = (adminMode || player === "Player") ? getCardImage(card) : getCardImage("Hidden");
+            cardContainer.append(`<img src="${imgSrc}" class="playing-card" data-card="${card}" data-player="${player}">`);
+        });
+    }
 
     // Reset Current Trump and Game Score on Page Load
     $("#current-trump").text("None");
@@ -62,18 +115,6 @@ $(document).ready(function () {
         let rank = cardParts[0];
         let suit = cardParts[1];
         return `/static/images/cards/${rank}_of_${suit}.png`;
-    }
-    
-    function displayDealtCards(response) {
-        for (let player in response.hands) {
-            const cardContainer = $(positions[player]);
-            cardContainer.empty(); // Clear previous cards
-    
-            response.hands[player].forEach((card, index) => {
-                let imgSrc = player === "Player" ? getCardImage(card) : getCardImage("Hidden");
-                cardContainer.append(`<img src="${imgSrc}" class="playing-card" data-card="${card}" data-player="${player}">`);
-            });
-        }
     }
 
     function effectiveSuit(card, trumpSuit) {
@@ -282,6 +323,7 @@ $(document).ready(function () {
                 message = goingAlone 
                     ? `${player} is <b>going alone</b> in ${currentSuit}.`
                     : `${player} called trump! The trump suit is now ${currentSuit}.`
+                rerenderHandsForAdminMode();
                 showRoundStart(message, player, goingAlone);
             },
             error: function (xhr) {
@@ -322,16 +364,6 @@ $(document).ready(function () {
                 $(selector).html(`${baseText} <img src="${suitImageMap[trumpSuit]}" alt="${trumpSuit}" class="trump-caller-indicator">`);
             }
         }
-    }
-
-    function updatePlayerHand(player, cards) {
-        const cardContainer = $(positions["Player"]);
-        cardContainer.empty(); // Clear previous cards
-
-        cards.forEach(card => {
-            let imgSrc = player === "Player" ? getCardImage(card) : getCardImage("Hidden");
-            cardContainer.append(`<img src="${imgSrc}" class="playing-card" data-card="${card}" data-player="${player}">`);
-        });
     }
     
     function rejectTrump(player, trumpRound) {
@@ -542,6 +574,7 @@ $(document).ready(function () {
     
                 initializeKitty(response.remaining_cards);
                 displayDealtCards(response);
+                rerenderHandsForAdminMode();
     
                 // ✅ Ensure the dealer highlight and icon remain
                 $(".rectangle").removeClass("dealer-highlight").find(".dealer-icon").remove();
@@ -1086,6 +1119,7 @@ $(document).ready(function () {
                 initializeKitty(response.remaining_cards);
                 displayDealtCards(response);
                 updateDealerPosition(response);
+                rerenderHandsForAdminMode();
 
                 // ✅ Show the trump card selection dialog with the first remaining card
                 $("#modal-round").fadeOut();

@@ -125,6 +125,9 @@ class BotLogic:
                     decision = 'pass'
                     will_go_alone = False
             
+            # Print hand score vs threshold for debugging
+            print(f"{self.name} in {position} seat has hand score {hand_score:.3f} vs threshold {position_threshold['normal']:.3f} for round 1 with up card {up_card}. Decision: {decision}, Go alone: {will_go_alone}")
+
             return decision, will_go_alone
         
         if trump_round == "2":
@@ -185,6 +188,8 @@ class BotLogic:
                     decision = reverse_suits[0] if reverse_suit_score_1 >= reverse_suit_score_2 else reverse_suits[1]
                     will_go_alone = should_go_alone_reverse
             
+            print(f"{self.name} in {position} seat has hand scores - Next: {next_suit_score:.3f}, Reverse1: {reverse_suit_score_1:.3f}, Reverse2: {reverse_suit_score_2:.3f}. Decision: {decision}, Go alone: {will_go_alone}")
+
             return decision, will_go_alone
         
     def get_seat_position(self, player_order):
@@ -458,6 +463,9 @@ class BotLogic:
     def choose_lead_card(self, hand, trump_suit, previous_tricks, partner_called_trump, player_called_trump, opponent_called_trump, player_going_alone, tricks_won):
         """
         Determines the best card to lead with
+
+        Possible things to add:
+        1. consider if opponent are out of trump because if they are, but your team mate may still have trump, you don't want to lead trump unless you want to keep the lead (strong offsuit to backup)
         """
         trump_cards = self.get_trump_cards(hand, trump_suit)
 
@@ -478,7 +486,7 @@ class BotLogic:
         if len(previous_tricks) == 3 and len(hand) == 2:
             if len(trump_cards) == 1:
                 if player_going_alone and secured_point:
-                    return max(trump_cards, key=lambda x: BotLogic.euchre_rank(x, trump_suit)) # TODO: Need to know if we have 3 tricks or not (guaranteed to not get euchred so can play more aggressively)
+                    return max(trump_cards, key=lambda x: BotLogic.euchre_rank(x, trump_suit)) 
                 return min(hand, key=lambda x: BotLogic.euchre_rank(x, trump_suit))
 
         # Lead strong if partner called trump

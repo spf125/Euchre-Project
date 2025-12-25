@@ -39,6 +39,12 @@
                 </div>
             </div>
             <div class="right menu">
+                <div class="item">
+                    <div class="ui toggle checkbox" id="admin-mode-container">
+                        <input type="checkbox" id="admin-mode-toggle">
+                        <label>Admin Mode</label>
+                    </div>
+                </div>
                 {% if user.is_authenticated %}
                     <span class="item">Welcome, {{ user.username }}!</span>
                     <form method="post" action="{% url 'logout' %}" style="display:inline;">
