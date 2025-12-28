@@ -126,7 +126,7 @@ class BotLogic:
                     will_go_alone = False
             
             # Print hand score vs threshold for debugging
-            print(f"{self.name} in {position} seat has hand score {hand_score:.3f} vs threshold {position_threshold['normal']:.3f} for round 1 with up card {up_card}. Decision: {decision}, Go alone: {will_go_alone}")
+            # print(f"{self.name} in {position} seat has hand score {hand_score:.3f} vs threshold {position_threshold['normal']:.3f} for round 1 with up card {up_card}. Decision: {decision}, Go alone: {will_go_alone}")
 
             return decision, will_go_alone
         
@@ -188,7 +188,7 @@ class BotLogic:
                     decision = reverse_suits[0] if reverse_suit_score_1 >= reverse_suit_score_2 else reverse_suits[1]
                     will_go_alone = should_go_alone_reverse
             
-            print(f"{self.name} in {position} seat has hand scores - Next: {next_suit_score:.3f}, Reverse1: {reverse_suit_score_1:.3f}, Reverse2: {reverse_suit_score_2:.3f}. Decision: {decision}, Go alone: {will_go_alone}")
+            # print(f"{self.name} in {position} seat has hand scores - Next: {next_suit_score:.3f}, Reverse1: {reverse_suit_score_1:.3f}, Reverse2: {reverse_suit_score_2:.3f}. Decision: {decision}, Go alone: {will_go_alone}")
 
             return decision, will_go_alone
         
